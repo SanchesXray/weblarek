@@ -15,6 +15,25 @@
 - src/utils/constants.ts — файл с константами
 - src/utils/utils.ts — файл с утилитами
 
+weblarek/
+├── src/
+│   ├── components/
+│   │   ├── api/
+│   │   │   └── WebLarekAPI.ts
+│   │   ├── base/
+│   │   │   ├── api.ts
+│   │   │   ├── component.ts
+│   │   │   └── events.ts
+│   │   └── models/
+│   │       ├── ProductsModel.ts
+│   │       ├── BasketModel.ts
+│   │       └── BuyerModel.ts
+│   ├── types/
+│   │   └── index.ts
+│   └── main.ts
+├── .env
+└── package.json
+
 ## Установка и запуск
 Для установки и запуска проекта необходимо выполнить команды
 
@@ -98,3 +117,159 @@ Presenter - презентер содержит основную логику п
 `emit<T extends object>(event: string, data?: T): void` - инициализация события. При вызове события в метод передается название события и объект с данными, который будет использован как аргумент для вызова обработчика.  
 `trigger<T extends object>(event: string, context?: Partial<T>): (data: T) => void` - возвращает функцию, при вызове которой инициализируется требуемое в параметрах событие с передачей в него данных из второго параметра.
 
+#### Данные и типы данных, используемые в приложении
+
+Карточка товара
+
+```
+interface IProduct {
+	id: string;
+	image: string;
+	title: string;
+    description: string;
+	category: string;
+	price: number | null;
+    button: HTMLElement;
+}
+```
+Интерфейс для работы с карточками товаров
+
+```
+interface IDataProduct {
+    items: IProduct[];
+    openCard(item: IProduct): void ;
+    selectedCard: IProduct;
+}
+```
+
+Слушатель для событий
+
+```
+interface IActions {
+    onClick: (event: MouseEvent) => void;
+}
+```
+
+Интерфейс для работы с заказом из корзины
+
+```
+interface IBasketOrder {
+    payment: string;
+    email: string;
+    phone: string;
+    address: string;
+    total: number;
+    items: string[];
+}
+```
+
+Интерфейс для работы с корзиной
+
+```
+interface IBasketModel {
+    listProducts: IProduct[];
+}
+```
+
+Данные для выбора оплаты
+
+```
+type TBasketPayment = 'cash' | 'card';
+```
+
+Результат заказа в корзине
+
+```
+interface IBasketResult {
+    id: string;
+    total: number;
+}
+```
+
+Интерфейс для работы с формами
+
+```
+interface IFormModel {
+    payment: TBasketPayment;
+    email: string;
+    phone: string;
+    address: string;
+    total: number;
+    items: string[];
+} 
+```
+
+Ошибки формы
+
+```
+interface IOrderForms extends IFormModel {
+    errors: string[];
+}
+
+
+type FormErrors = Partial<Record<keyof IOrderForms, string>>;
+```
+##### Блок-схема зависимости данных
+
+`https://excalidraw.com/#json=8xrqOfYqEWG9R-9OehjHM,1SiekS7l7VZexpDuYb2m3g`
+
+###### Модели данных
+
+#### Класс ProductsModel
+Отвечает за хранение и управление списком товаров в каталоге.
+
+**Поля:**
+- `_items: IProduct[]` - массив всех товаров
+- `_selectedProduct: IProduct | null` - выбранный для просмотра товар
+
+**Методы:**
+- `setItems(items: IProduct[]): void` - сохранить массив товаров
+- `getItems(): IProduct[]` - получить все товары
+- `getProductById(id: string): IProduct | undefined` - получить товар по id
+- `setSelectedProduct(product: IProduct): void` - сохранить выбранный товар
+- `getSelectedProduct(): IProduct | null` - получить выбранный товар
+
+#### Класс BasketModel
+Отвечает за хранение и управление товарами в корзине.
+
+**Поля:**
+- `_items: IProduct[]` - массив товаров в корзине
+
+**Методы:**
+- `getItems(): IProduct[]` - получить все товары
+- `addItem(product: IProduct): void` - добавить товар
+- `removeItem(productId: string): void` - удалить товар
+- `clear(): void` - очистить корзину
+- `getTotal(): number` - получить общую стоимость
+- `getCount(): number` - получить количество товаров
+- `contains(productId: string): boolean` - проверить наличие товара
+
+#### Класс BuyerModel
+Отвечает за хранение и валидацию данных покупателя.
+
+**Поля:**
+- `_payment: TPayment` - способ оплаты
+- `_address: string` - адрес доставки
+- `_email: string` - email
+- `_phone: string` - телефон
+
+**Методы:**
+- геттеры и сеттеры для каждого поля
+- `getBuyerData(): IBuyer` - получить все данные
+- `clear(): void` - очистить данные
+- `validateField(field: keyof IBuyer): string | null` - валидация одного поля
+- `validateAll(): FormErrors` - валидация всех полей
+- `isFirstStepValid(): boolean` - проверка первого шага формы
+- `isSecondStepValid(): boolean` - проверка второго шага формы
+
+### Слой коммуникации
+
+#### Класс WebLarekAPI
+Отвечает за взаимодействие с сервером.
+
+**Конструктор:**
+`constructor(baseUrl: string, options?: RequestInit)` - принимает базовый URL сервера и опциональные настройки запросов
+
+**Методы:**
+- `getProducts(): Promise<IProductsResponse>` - GET запрос для получения списка товаров
+- `postOrder(order: IOrder): Promise<IOrderResult>` - POST запрос для отправки заказа
