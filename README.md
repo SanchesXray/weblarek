@@ -15,6 +15,7 @@
 - src/utils/constants.ts — файл с константами
 - src/utils/utils.ts — файл с утилитами
 
+`
 weblarek/
 ├── src/
 │   ├── components/
@@ -33,6 +34,7 @@ weblarek/
 │   └── main.ts
 ├── .env
 └── package.json
+`
 
 ## Установка и запуск
 Для установки и запуска проекта необходимо выполнить команды
