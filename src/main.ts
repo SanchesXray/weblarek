@@ -3,34 +3,8 @@ import { ProductsModel } from './components/models/ProductsModel';
 import { BasketModel } from './components/models/BasketModel';
 import { BuyerModel } from './components/models/BuyerModel';
 import { WebLarekAPI } from './components/api/WebLarekAPI';
-
-// Проверка переменных окружения
-console.log('=== ПРОВЕРКА .ENV ===');
-console.log('VITE_API_ORIGIN:', import.meta.env.VITE_API_ORIGIN);
-console.log('Все переменные VITE:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE')));
-console.log('==================');
-
-// Тестовые данные для проверки моделей
-const testProducts = {
-    items: [
-        {
-            id: '1',
-            title: 'Тестовый товар 1',
-            description: 'Описание товара 1',
-            image: '/test.jpg',
-            category: 'софт-скил',
-            price: 1000
-        },
-        {
-            id: '2',
-            title: 'Тестовый товар 2',
-            description: 'Описание товара 2',
-            image: '/test.jpg',
-            category: 'хард-скил',
-            price: 2000
-        }
-    ]
-};
+import { Api } from './components/base/Api';  // ← импорт класса Api
+import { apiProducts } from './utils/data';
 
 // Создаем экземпляры моделей
 const productsModel = new ProductsModel();
@@ -41,7 +15,7 @@ console.log('=== Тестирование моделей данных ===');
 
 // 1. Тестируем модель каталога
 console.log('\n1. Модель каталога:');
-productsModel.setItems(testProducts.items);
+productsModel.setItems(apiProducts.items);
 console.log('Массив товаров из каталога:', productsModel.getItems());
 console.log('Количество товаров:', productsModel.getItems().length);
 
@@ -84,13 +58,16 @@ console.log('Второй шаг валиден?', buyerModel.isSecondStepValid(
 const errors = buyerModel.validateAll();
 console.log('Ошибки валидации:', errors);
 
-// 4. Тестируем работу с API
+// 4. Тестируем работу с API (инверсия зависимостей)
 console.log('\n4. Работа с API:');
-// Используем переменную из .env или fallback URL
-const API_URL = import.meta.env.VITE_API_ORIGIN || 'https://larek-api.nomoreparties.co';
+const API_URL = import.meta.env.VITE_API_ORIGIN || 'https://larek-api.nomoreparties.co/api/weblarek';
 console.log('Используемый URL API:', API_URL);
 
-const api = new WebLarekAPI(API_URL);
+// Создаем экземпляр Api
+const apiInstance = new Api(API_URL);
+
+// Передаем его в WebLarekAPI (инверсия зависимостей)
+const api = new WebLarekAPI(apiInstance);
 
 api.getProducts()
     .then(data => {
