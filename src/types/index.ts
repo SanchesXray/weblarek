@@ -5,7 +5,7 @@ export interface IApi {
     post<T extends object>(uri: string, data: object, method?: ApiPostMethods): Promise<T>;
 }
 
-// Добавляем наши типы и интерфейсы
+// Добавляем типы и интерфейсы
 export type TPayment = 'card' | 'cash' | '';
 
 export interface IProduct {
@@ -41,3 +41,6 @@ export interface IProductsResponse {
     items: IProduct[];
     total: number;
 }
+
+// Тип для ошибок формы
+export type FormErrors = Partial<Record<keyof IBuyer, string>>;

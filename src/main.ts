@@ -5,6 +5,7 @@ import { BuyerModel } from './components/models/BuyerModel';
 import { WebLarekAPI } from './components/api/WebLarekAPI';
 import { Api } from './components/base/Api';  // ← импорт класса Api
 import { apiProducts } from './utils/data';
+import { API_URL } from './utils/constants';  // ← импортируем константу
 
 // Создаем экземпляры моделей
 const productsModel = new ProductsModel();
@@ -46,27 +47,42 @@ console.log('После очистки, количество:', basketModel.getC
 
 // 3. Тестируем модель покупателя
 console.log('\n3. Модель покупателя:');
+
+// Тест 1: Пустые поля
+console.log('\n--- Проверка валидации с пустыми полями ---');
+console.log('Ошибки:', buyerModel.validateAll());
+
+// Тест 2: Только способ оплаты
+console.log('\n--- Проверка после заполнения способа оплаты ---');
 buyerModel.payment = 'card';
+console.log('Ошибки:', buyerModel.validateAll());
+
+// Тест 3: Добавляем адрес
+console.log('\n--- Проверка после добавления адреса ---');
 buyerModel.address = 'г. Москва, ул. Ленина, д. 1';
+console.log('Ошибки:', buyerModel.validateAll());
+
+// Тест 4: Добавляем email
+console.log('\n--- Проверка после добавления email ---');
 buyerModel.email = 'test@example.com';
+console.log('Ошибки:', buyerModel.validateAll());
+
+// Тест 5: Добавляем телефон (все поля заполнены)
+console.log('\n--- Проверка после заполнения всех полей ---');
 buyerModel.phone = '+7 (999) 123-45-67';
+console.log('Ошибки (должны отсутствовать):', buyerModel.validateAll());
 
-console.log('Данные покупателя:', buyerModel.getBuyerData());
-console.log('Первый шаг валиден?', buyerModel.isFirstStepValid());
-console.log('Второй шаг валиден?', buyerModel.isSecondStepValid());
+// Тест 6: Проверка очистки
+console.log('\n--- Проверка после очистки данных ---');
+buyerModel.clear();
+console.log('Ошибки (снова все поля пустые):', buyerModel.validateAll());
 
-const errors = buyerModel.validateAll();
-console.log('Ошибки валидации:', errors);
-
-// 4. Тестируем работу с API (инверсия зависимостей)
+// 4. Тестируем работу с API
 console.log('\n4. Работа с API:');
-const API_URL = import.meta.env.VITE_API_ORIGIN || 'https://larek-api.nomoreparties.co/api/weblarek';
-console.log('Используемый URL API:', API_URL);
+console.log('Используемый URL API:', API_URL); // ← используем константу
 
-// Создаем экземпляр Api
+// Создаем экземпляр Api и передаем его в WebLarekAPI
 const apiInstance = new Api(API_URL);
-
-// Передаем его в WebLarekAPI (инверсия зависимостей)
 const api = new WebLarekAPI(apiInstance);
 
 api.getProducts()

@@ -1,109 +1,64 @@
-import { IBuyer, TPayment } from '../../types';
-
-export type FormErrors = Partial<Record<keyof IBuyer, string>>;
+import { TPayment, FormErrors } from '../../types';
 
 export class BuyerModel {
-    private _payment: TPayment = '';
-    private _address: string = '';
-    private _email: string = '';
-    private _phone: string = '';
+    private paymentValue: TPayment = '';
+    private addressValue: string = '';
+    private emailValue: string = '';
+    private phoneValue: string = '';
 
     // Геттеры и сеттеры для полей
     set payment(value: TPayment) {
-        this._payment = value;
+        this.paymentValue = value;
     }
 
     get payment(): TPayment {
-        return this._payment;
+        return this.paymentValue;
     }
 
     set address(value: string) {
-        this._address = value;
+        this.addressValue = value;
     }
 
     get address(): string {
-        return this._address;
+        return this.addressValue;
     }
 
     set email(value: string) {
-        this._email = value;
+        this.emailValue = value;
     }
 
     get email(): string {
-        return this._email;
+        return this.emailValue;
     }
 
     set phone(value: string) {
-        this._phone = value;
+        this.phoneValue = value;
     }
 
     get phone(): string {
-        return this._phone;
-    }
-
-    // Получить все данные покупателя
-    getBuyerData(): IBuyer {
-        return {
-            payment: this._payment,
-            address: this._address,
-            email: this._email,
-            phone: this._phone
-        };
+        return this.phoneValue;
     }
 
     // Очистить данные
     clear(): void {
-        this._payment = '';
-        this._address = '';
-        this._email = '';
-        this._phone = '';
-    }
-
-    // Валидация одного поля
-    validateField(field: keyof IBuyer): string | null {
-        switch (field) {
-            case 'payment':
-                if (!this._payment) return 'Не выбран способ оплаты';
-                break;
-            case 'address':
-                if (!this._address.trim()) return 'Введите адрес доставки';
-                break;
-            case 'email':
-                if (!this._email.trim()) return 'Введите email';
-                break;
-            case 'phone':
-                if (!this._phone.trim()) return 'Введите телефон';
-                break;
-        }
-        return null;
+        this.paymentValue = '';
+        this.addressValue = '';
+        this.emailValue = '';
+        this.phoneValue = '';
     }
 
     // Валидация всех полей
     validateAll(): FormErrors {
         const errors: FormErrors = {};
-        
-        const paymentError = this.validateField('payment');
-        if (paymentError) errors.payment = paymentError;
-        
-        const addressError = this.validateField('address');
-        if (addressError) errors.address = addressError;
-        
-        const emailError = this.validateField('email');
-        if (emailError) errors.email = emailError;
-        
-        const phoneError = this.validateField('phone');
-        if (phoneError) errors.phone = phoneError;
-        
+                
+        if (!this.paymentValue) errors.payment = 'Не выбран способ оплаты';
+
+        if (!this.addressValue.trim()) errors.address = 'Введите адрес доставки';
+
+        if (!this.emailValue.trim()) errors.email = 'Введите email';
+
+        if (!this.phoneValue.trim()) errors.phone = 'Введите телефон';
+
         return errors;
-    }
-
-    // Проверка валидности для первого шага (оплата и адрес)
-    isFirstStepValid(): boolean {
-        return !!(this._payment && this._address.trim());
-    }
-
-    // Проверка валидности для второго шага (email и телефон)
-    isSecondStepValid(): boolean {
-        return !!(this._email.trim() && this._phone.trim());
     }
 }

@@ -90,7 +90,7 @@ Presenter - презентер содержит основную логику п
 Конструктор класса не принимает параметров.
 
 Поля класса:  
-`_events: Map<string | RegExp, Set<Function>>)` -  хранит коллекцию подписок на события. Ключи коллекции - названия событий или регулярное выражение, значения - коллекция функций обработчиков, которые будут вызваны при срабатывании события.
+`events: Map<string | RegExp, Set<Function>>)` -  хранит коллекцию подписок на события. Ключи коллекции - названия событий или регулярное выражение, значения - коллекция функций обработчиков, которые будут вызваны при срабатывании события.
 
 Методы класса:  
 `on<T extends object>(event: EventName, callback: (data: T) => void): void` - подписка на событие, принимает название события и функцию обработчик.  
@@ -99,24 +99,37 @@ Presenter - презентер содержит основную логику п
 
 ### Типы данных
 
-```
-// Товар
-interface IProduct {
-    id: string;
-    title: string;
-    image: string;
-    description: string;
-    category: string;
-    price: number | null;
-}
+#### Интерфейс IProduct (Товар)
 
-// Покупатель
-interface IBuyer {
-    payment: TPayment;
-    address: string;
-    email: string;
-    phone: string;
+Описывает структуру товара, который отображается в каталоге и добавляется в корзину.
+
+```typescript
+interface IProduct {
+    id: string;          // Уникальный идентификатор товара
+    title: string;       // Название товара
+    image: string;       // Путь к изображению товара
+    description: string; // Подробное описание товара
+    category: string;    // Категория товара (софт-скил, хард-скил, другое и т.д.)
+    price: number | null; // Цена товара в синапсах. null - товар бесплатный или цена не указана
 }
+```
+
+#### Интерфейс IBuyer (Покупатель)
+Описывает данные, которые пользователь вводит при оформлении заказа.
+
+```typescript
+interface IBuyer {
+    payment: TPayment;   // Способ оплаты: 'card' (онлайн), 'cash' (при получении), '' (не выбран)
+    address: string;     // Адрес доставки заказа
+    email: string;       // Электронная почта для отправки подтверждения
+    phone: string;       // Номер телефона для связи
+}
+```
+
+#### Вспомогательные типы
+```typescript
+type TPayment = 'card' | 'cash' | '';           // Способ оплаты
+type FormErrors = Partial<Record<keyof IBuyer, string>>; // Объект с ошибками валидации полей
 ```
 
 ### Модели данных
@@ -125,8 +138,8 @@ interface IBuyer {
 Отвечает за хранение и управление списком товаров в каталоге.
 
 Поля:  
-`_items: IProduct[]` - массив всех товаров  
-`_selectedProduct: IProduct | null` - выбранный для просмотра товар
+`items: IProduct[]` - массив всех товаров  
+`selectedProduct: IProduct | null` - выбранный для просмотра товар
 
 Методы:  
 `setItems(items: IProduct[]): void` - сохранить массив товаров  
@@ -139,7 +152,7 @@ interface IBuyer {
 Отвечает за хранение и управление товарами в корзине.
 
 Поля:  
-`_items: IProduct[]` - массив товаров в корзине
+`items: IProduct[]` - массив товаров в корзине
 
 Методы:  
 `getItems(): IProduct[]` - получить все товары  
@@ -154,19 +167,15 @@ interface IBuyer {
 Отвечает за хранение и валидацию данных покупателя.
 
 Поля:  
-`_payment: TPayment` - способ оплаты  
-`_address: string` - адрес доставки  
-`_email: string` - email  
-`_phone: string` - телефон
+`payment: TPayment` - способ оплаты  
+`address: string` - адрес доставки  
+`email: string` - email  
+`phone: string` - телефон
 
 Методы:  
-геттеры и сеттеры для каждого поля  
-`getBuyerData(): IBuyer` - получить все данные  
-`clear(): void` - очистить данные  
-`validateField(field: keyof IBuyer): string | null` - валидация одного поля  
-`validateAll(): FormErrors` - валидация всех полей  
-`isFirstStepValid(): boolean` - проверка первого шага формы  
-`isSecondStepValid(): boolean` - проверка второго шага формы
+- геттеры и сеттеры для каждого поля (`payment`, `address`, `email`, `phone`)
+- `clear(): void` - очистить все данные
+- `validateAll(): FormErrors` - валидация всех полей, возвращает объект с ошибками
 
 ### Слой коммуникации
 
@@ -177,7 +186,7 @@ interface IBuyer {
 `constructor(api: Api)` - принимает экземпляр класса `Api` для выполнения HTTP-запросов
 
 Поля:  
-`_api: Api` - экземпляр класса Api для работы с сервером
+`api: Api` - экземпляр класса Api для работы с сервером
 
 Методы:  
 `getProducts(): Promise<IProductsResponse>` - GET запрос на эндпоинт `/product/` для получения списка товаров  
