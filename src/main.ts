@@ -1,100 +1,268 @@
 import './scss/styles.scss';
+import { EventEmitter } from './components/base/Events';
 import { ProductsModel } from './components/models/ProductsModel';
 import { BasketModel } from './components/models/BasketModel';
 import { BuyerModel } from './components/models/BuyerModel';
 import { WebLarekAPI } from './components/api/WebLarekAPI';
-import { Api } from './components/base/Api';  // ← импорт класса Api
-import { apiProducts } from './utils/data';
-import { API_URL } from './utils/constants';  // ← импортируем константу
+import { Api } from './components/base/Api';
+import { API_URL, CDN_URL } from './utils/constants';
 
-// Создаем экземпляры моделей
-const productsModel = new ProductsModel();
-const basketModel = new BasketModel();
-const buyerModel = new BuyerModel();
+// Импорты компонентов View
+import { Header } from './components/view/Header';
+import { Modal } from './components/view/Modal';
+import { Gallery } from './components/view/Gallery';
+import { Basket } from './components/view/Basket';
+import { OrderForm } from './components/view/OrderForm';
+import { ContactsForm } from './components/view/ContactsForm';
+import { Success } from './components/view/Success';
+import { CatalogCard } from './components/view/CatalogCard';
+import { PreviewCard } from './components/view/PreviewCard';
+import { BasketCard } from './components/view/BasketCard';
 
-console.log('=== Тестирование моделей данных ===');
+// Типы данных
+import { IProduct } from './types';
 
-// 1. Тестируем модель каталога
-console.log('\n1. Модель каталога:');
-productsModel.setItems(apiProducts.items);
-console.log('Массив товаров из каталога:', productsModel.getItems());
-console.log('Количество товаров:', productsModel.getItems().length);
+// ========== ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ==========
+// Клонирует шаблон и возвращает первый HTMLElement
+function cloneTemplate(template: HTMLTemplateElement): HTMLElement {
+    const fragment = template.content.cloneNode(true) as DocumentFragment;
+    const firstElement = fragment.firstElementChild as HTMLElement;
+    return firstElement;
+}
 
-const firstProduct = productsModel.getItems()[0];
-console.log('Первый товар:', firstProduct);
+// ========== 1. Инициализация ==========
+// ========== Инициализация брокера событий ==========
+const eventBus = new EventEmitter();
 
-productsModel.setSelectedProduct(firstProduct);
-console.log('Выбранный товар:', productsModel.getSelectedProduct());
+// ========== Инициализация моделей данных ==========
+const productsModel = new ProductsModel(eventBus);
+const basketModel = new BasketModel(eventBus);
+const buyerModel = new BuyerModel(eventBus);
 
-// 2. Тестируем модель корзины
-console.log('\n2. Модель корзины:');
-basketModel.addItem(firstProduct);
-console.log('Товаров в корзине:', basketModel.getCount());
-console.log('Список товаров в корзине:', basketModel.getItems());
-console.log('Общая стоимость:', basketModel.getTotal());
-
-const secondProduct = productsModel.getItems()[1];
-basketModel.addItem(secondProduct);
-console.log('После добавления второго товара, количество:', basketModel.getCount());
-console.log('Общая стоимость:', basketModel.getTotal());
-
-console.log('Содержит ли корзина первый товар?', basketModel.contains(firstProduct.id));
-basketModel.removeItem(firstProduct.id);
-console.log('После удаления первого товара, количество:', basketModel.getCount());
-
-basketModel.clear();
-console.log('После очистки, количество:', basketModel.getCount());
-
-// 3. Тестируем модель покупателя
-console.log('\n3. Модель покупателя:');
-
-// Тест 1: Пустые поля
-console.log('\n--- Проверка валидации с пустыми полями ---');
-console.log('Ошибки:', buyerModel.validateAll());
-
-// Тест 2: Только способ оплаты
-console.log('\n--- Проверка после заполнения способа оплаты ---');
-buyerModel.payment = 'card';
-console.log('Ошибки:', buyerModel.validateAll());
-
-// Тест 3: Добавляем адрес
-console.log('\n--- Проверка после добавления адреса ---');
-buyerModel.address = 'г. Москва, ул. Ленина, д. 1';
-console.log('Ошибки:', buyerModel.validateAll());
-
-// Тест 4: Добавляем email
-console.log('\n--- Проверка после добавления email ---');
-buyerModel.email = 'test@example.com';
-console.log('Ошибки:', buyerModel.validateAll());
-
-// Тест 5: Добавляем телефон (все поля заполнены)
-console.log('\n--- Проверка после заполнения всех полей ---');
-buyerModel.phone = '+7 (999) 123-45-67';
-console.log('Ошибки (должны отсутствовать):', buyerModel.validateAll());
-
-// Тест 6: Проверка очистки
-console.log('\n--- Проверка после очистки данных ---');
-buyerModel.clear();
-console.log('Ошибки (снова все поля пустые):', buyerModel.validateAll());
-
-// 4. Тестируем работу с API
-console.log('\n4. Работа с API:');
-console.log('Используемый URL API:', API_URL); // ← используем константу
-
-// Создаем экземпляр Api и передаем его в WebLarekAPI
+// ========== Инициализация API ==========
 const apiInstance = new Api(API_URL);
 const api = new WebLarekAPI(apiInstance);
 
+// ========== 2. ПОЛУЧЕНИЕ DOM ЭЛЕМЕНТОВ ==========
+const galleryElement = document.querySelector('.gallery') as HTMLElement;
+const modalElement = document.getElementById('modal-container') as HTMLElement;
+const headerElement = document.querySelector('.header') as HTMLElement;
+
+// ========== 3. ПОЛУЧЕНИЕ ШАБЛОНОВ ==========
+const catalogCardTemplate = document.getElementById('card-catalog') as HTMLTemplateElement;
+const previewCardTemplate = document.getElementById('card-preview') as HTMLTemplateElement;
+const basketCardTemplate = document.getElementById('card-basket') as HTMLTemplateElement;
+const basketTemplate = document.getElementById('basket') as HTMLTemplateElement;
+const orderTemplate = document.getElementById('order') as HTMLTemplateElement;
+const contactsTemplate = document.getElementById('contacts') as HTMLTemplateElement;
+const successTemplate = document.getElementById('success') as HTMLTemplateElement;
+
+// ========== 4. СОЗДАНИЕ КОМПОНЕНТОВ VIEW ==========
+// Создаём Header (шапка с корзиной)
+const header = new Header(headerElement, eventBus);
+header.render();
+
+// Создаём Modal (модальное окно)
+const modal = new Modal(modalElement, eventBus);
+
+// Создаём Gallery (каталог, сюда будут вставляться карточки)
+const gallery = new Gallery(galleryElement);
+gallery.render();
+
+// Создаём Basket (корзина, будет открываться в модалке)
+const basketContainer = cloneTemplate(basketTemplate);
+const basket = new Basket(basketContainer, eventBus);
+
+// ========== 5. ЗАГРУЗКА ТОВАРОВ С СЕРВЕРА ==========
 api.getProducts()
     .then(data => {
-        console.log('Данные с сервера:', data);
         productsModel.setItems(data.items);
-        console.log('Сохранено в модель:', productsModel.getItems().length, 'товаров');
-        console.log('Массив товаров из каталога после загрузки:', productsModel.getItems());
     })
     .catch(error => {
         console.error('Ошибка при загрузке товаров:', error);
-        if (error.message) {
-            console.error('Сообщение ошибки:', error.message);
-        }
     });
+
+// ========== 6. НАСТРОЙКА ОБРАБОТЧИКОВ СОБЫТИЙ ==========
+// Обновление каталога при загрузке товаров
+eventBus.on('products:changed', (data: { items: IProduct[] }) => {
+    const cards = data.items.map(product => {
+        const cardElement = cloneTemplate(catalogCardTemplate);
+        const card = new CatalogCard(cardElement, eventBus);
+        card.render({
+            id: product.id,
+            title: product.title,
+            price: product.price,
+            image: CDN_URL + product.image,
+            category: product.category
+        });
+        return card.render();
+    });
+    gallery.catalog = cards;
+    gallery.render();
+});
+
+// Показ карточки товара в модальном окне при выборе
+eventBus.on('selected-product:changed', (data: { product: IProduct | null }) => {
+    if (data.product) {
+        const cardElement = cloneTemplate(previewCardTemplate);
+        const previewCard = new PreviewCard(cardElement, eventBus, basketModel); // ← передаём basketModel
+        previewCard.render({
+            price: data.product.price,
+            id: data.product.id,
+            title: data.product.title,
+            image: CDN_URL + data.product.image,
+            category: data.product.category,
+            description: data.product.description
+        });
+        modal.setContent(previewCard.render());
+        modal.open();
+    }
+});
+
+// Обновление счётчика в шапке и корзины при изменении корзины
+eventBus.on('basket:changed', (data: { items: IProduct[], total: number, count: number }) => {
+    // Обновляем счётчик в шапке
+    header.counter = data.count;
+
+    // Если модальное окно открыто и в нём отображается корзина, обновляем её
+    const modalContent = document.querySelector('.modal__content');
+    if (modalContent && modalContent.querySelector('.basket')) {
+        // Обновляем корзину
+        const cards = data.items.map((item, index) => {
+            const cardElement = cloneTemplate(basketCardTemplate);
+            const card = new BasketCard(cardElement, eventBus);
+            card.render({
+                id: item.id,
+                title: item.title,
+                price: item.price,
+                image: CDN_URL + item.image,
+                category: item.category
+            });
+            card.index = index + 1;
+            return card;
+        });
+        basket.items = cards;
+        basket.total = data.total;
+
+        // Обновляем содержимое модального окна
+        modal.setContent(basket.render());
+    }
+});
+
+//  Выбор карточки для просмотра
+eventBus.on('card:select', (data: { id: string }) => {
+    const product = productsModel.getProductById(data.id);
+    if (product) {
+        productsModel.setSelectedProduct(product);
+    }
+});
+
+// Добавление товара в корзину
+eventBus.on('product:add-to-basket', (data: { id: string, price: number }) => {
+    const product = productsModel.getProductById(data.id);
+    if (product && product.price !== null) {
+        basketModel.addItem(product);
+    }
+});
+
+// Открытие корзины
+eventBus.on('basket:open', () => {
+    const items = basketModel.getItems();
+    const cards = items.map((item, index) => {
+        const cardElement = cloneTemplate(basketCardTemplate);
+        const card = new BasketCard(cardElement, eventBus);
+        card.render({
+            id: item.id,
+            title: item.title,
+            price: item.price,
+            image: CDN_URL + item.image,
+            category: item.category
+        });
+        card.index = index + 1;
+        return card;
+    });
+    basket.items = cards;
+    basket.total = basketModel.getTotal();
+    modal.setContent(basket.render());
+    modal.open();
+});
+
+// Удаление товара из корзины
+eventBus.on('basket:remove-item', (data: { id: string }) => {
+    basketModel.removeItem(data.id);
+});
+
+// Оформление заказа (переход к форме заказа)
+eventBus.on('basket:create-order', () => {
+    if (basketModel.getCount() === 0) return;
+
+    // Очищаем данные покупателя перед новым заказом
+    buyerModel.clear();
+
+    // Передаём шаблон напрямую, а не клонированный контейнер
+    const orderForm = new OrderForm(orderTemplate, eventBus);
+    modal.setContent(orderForm.render());
+    modal.open();
+});
+
+// Выбор способа оплаты
+eventBus.on('order:payment-change', (data: { payment: 'card' | 'cash' }) => {
+    buyerModel.payment = data.payment;
+});
+
+// Отправка формы заказа (переход к контактной форме)
+eventBus.on('form:submit', (data: any) => {
+    // Проверяем, что это форма заказа (есть поля payment и address)
+    if (data.address !== undefined) {
+        buyerModel.address = data.address;
+        if (data.payment) {
+            buyerModel.payment = data.payment;
+        }
+
+        // Передаём шаблон напрямую
+        const contactsForm = new ContactsForm(contactsTemplate, eventBus);
+        modal.setContent(contactsForm.render());
+    }
+    
+    // Если это форма контактов, обработаем отдельно
+    else if (data.email !== undefined && data.phone !== undefined) {
+        buyerModel.email = data.email;
+        buyerModel.phone = data.phone;
+
+        // Проверяем валидность
+        const errors = buyerModel.validateAll();
+        if (Object.keys(errors).length > 0) {
+            console.error('Ошибки валидации:', errors);
+            return;
+        }
+
+        // Отправляем заказ на сервер
+        const order = {
+            payment: buyerModel.payment,
+            email: buyerModel.email,
+            phone: buyerModel.phone,
+            address: buyerModel.address,
+            total: basketModel.getTotal(),
+            items: basketModel.getItems().map(item => item.id)
+        };
+
+        api.postOrder(order)
+            .then(result => {
+                const success = new Success(successTemplate, eventBus);
+                success.total = result.total;
+                modal.setContent(success.render());
+                basketModel.clear();
+            })
+            .catch(error => {
+                console.error('Ошибка при отправке заказа:', error);
+            });
+    }
+});
+
+// Закрытие успешного заказа
+eventBus.on('success:close', () => {
+    modal.close();
+});
+
+// Закрытие модального окна
+eventBus.on('modal:close', () => {});
