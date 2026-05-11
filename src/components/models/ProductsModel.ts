@@ -27,7 +27,7 @@ export class ProductsModel {
     }
 
     // Сохранить выбранный товар для просмотра
-    setSelectedProduct(product: IProduct): void {
+    setSelectedProduct(product: IProduct): void {              
         this.selectedProduct = product;
         this.eventBus.emit('selected-product:changed', { product: this.selectedProduct }); // Генерация события
     }

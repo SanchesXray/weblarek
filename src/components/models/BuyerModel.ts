@@ -8,16 +8,13 @@ export class BuyerModel {
     private phoneValue: string = '';
     private eventBus: EventEmitter;
 
-    // Конструктор
     constructor(eventBus: EventEmitter) {
         this.eventBus = eventBus;
     }
 
-    // Геттеры и сеттеры для полей
     set payment(value: TPayment) {
         this.paymentValue = value;
         this.emitBuyerChanged();
-        this.emitValidation();
     }
 
     get payment(): TPayment {
@@ -27,7 +24,6 @@ export class BuyerModel {
     set address(value: string) {
         this.addressValue = value;
         this.emitBuyerChanged();
-        this.emitValidation();
     }
 
     get address(): string {
@@ -37,7 +33,6 @@ export class BuyerModel {
     set email(value: string) {
         this.emailValue = value;
         this.emitBuyerChanged();
-        this.emitValidation();
     }
 
     get email(): string {
@@ -47,39 +42,31 @@ export class BuyerModel {
     set phone(value: string) {
         this.phoneValue = value;
         this.emitBuyerChanged();
-        this.emitValidation();
     }
 
     get phone(): string {
         return this.phoneValue;
     }
 
-    // Очистить данные
     clear(): void {
         this.paymentValue = '';
         this.addressValue = '';
         this.emailValue = '';
         this.phoneValue = '';
         this.emitBuyerChanged();
-        this.emitValidation();
     }
 
-    // Валидация всех полей
     validateAll(): FormErrors {
         const errors: FormErrors = {};
-                
+
         if (!this.paymentValue) errors.payment = 'Не выбран способ оплаты';
-
         if (!this.addressValue.trim()) errors.address = 'Введите адрес доставки';
-
         if (!this.emailValue.trim()) errors.email = 'Введите email';
-
         if (!this.phoneValue.trim()) errors.phone = 'Введите телефон';
 
         return errors;
     }
 
-        // ← добавить приватный метод для генерации события изменения данных
     private emitBuyerChanged(): void {
         this.eventBus.emit('buyer:changed', {
             payment: this.paymentValue,
@@ -87,12 +74,5 @@ export class BuyerModel {
             email: this.emailValue,
             phone: this.phoneValue
         });
-    }
-
-    // ← добавить приватный метод для генерации события валидации
-    private emitValidation(): void {
-        const errors = this.validateAll();
-        const isValid = Object.keys(errors).length === 0;
-        this.eventBus.emit('buyer:validated', { isValid, errors });
     }
 }

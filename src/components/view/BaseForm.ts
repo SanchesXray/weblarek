@@ -7,43 +7,53 @@ export abstract class BaseForm extends Component<any> {
     protected errorsContainer: HTMLElement | null;
     protected inputs: NodeListOf<HTMLInputElement>;
     protected eventBus: EventEmitter;
+    protected submitEventName: string;
 
-    constructor(template: HTMLTemplateElement, eventBus: EventEmitter) {
-        // Клонируем содержимое шаблона
+    constructor(template: HTMLTemplateElement, eventBus: EventEmitter, submitEventName: string) {
         const fragment = template.content.cloneNode(true) as DocumentFragment;
-        // Находим форму внутри фрагмента
         const formElement = fragment.querySelector('form');
-        
-        if (!formElement) {
-            throw new Error('BaseForm: в шаблоне не найден элемент <form>');
-        }
-        
-        // Вызываем super с формой как контейнером
+        if (!formElement) throw new Error('BaseForm: <form> not found');
         super(formElement as HTMLElement);
+
         this.eventBus = eventBus;
+        this.submitEventName = submitEventName;
         this.formElement = formElement as HTMLFormElement;
-        
-        // Находим элементы внутри формы
         this.submitButton = this.formElement.querySelector('button[type="submit"]');
         this.errorsContainer = this.formElement.querySelector('.form__errors');
         this.inputs = this.formElement.querySelectorAll('input');
-        
-        // Навешиваем обработчики
+
+        // Только уведомление о сабмите, без данных
         this.formElement.addEventListener('submit', (e) => {
             e.preventDefault();
-            if (this.validateForm()) {
-                this.eventBus.emit('form:submit', this.getFormData());
-            }
+            this.eventBus.emit(this.submitEventName);
         });
-        
+
+        // Уведомление об изменении полей
         this.inputs.forEach(input => {
-            input.addEventListener('input', () => this.validateForm());
+            input.addEventListener('input', () => {
+                this.eventBus.emit('form:field-change', { name: input.name, value: input.value });
+            });
         });
     }
 
-    protected abstract validateForm(): boolean;
+    setFieldValue(name: string, value: string): void {
+        const input = this.formElement.querySelector(`[name="${name}"]`) as HTMLInputElement;
+        if (input) input.value = value;
+    }
 
-    protected getFormData(): Record<string, string> {
+    setError(message: string): void {
+        if (this.errorsContainer) this.errorsContainer.textContent = message;
+    }
+
+    clearError(): void {
+        if (this.errorsContainer) this.errorsContainer.textContent = '';
+    }
+
+    setSubmitEnabled(enabled: boolean): void {
+        if (this.submitButton) this.submitButton.disabled = !enabled;
+    }
+
+    getFormData(): Record<string, string> {
         const data: Record<string, string> = {};
         this.inputs.forEach(input => {
             data[input.name] = input.value;
@@ -51,16 +61,9 @@ export abstract class BaseForm extends Component<any> {
         return data;
     }
 
-    protected showError(message: string): void {
-        if (this.errorsContainer) this.errorsContainer.textContent = message;
-    }
-
-    protected clearError(): void {
-        if (this.errorsContainer) this.errorsContainer.textContent = '';
-    }
-
-    protected setSubmitButtonState(isValid: boolean): void {
-        if (this.submitButton) this.submitButton.disabled = !isValid;
+    clearForm(): void {
+        this.inputs.forEach(input => input.value = '');
+        this.clearError();
     }
 
     render(): HTMLElement {

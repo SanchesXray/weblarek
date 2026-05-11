@@ -6,13 +6,12 @@ export class Success extends Component<any> {
     private closeButton: HTMLButtonElement | null;
     private eventBus: EventEmitter;
 
-    constructor(template: HTMLTemplateElement, eventBus: EventEmitter) {
-        const fragment = template.content.cloneNode(true) as DocumentFragment;
-        const container = fragment.firstElementChild as HTMLElement;
+    constructor(container: HTMLElement, eventBus: EventEmitter) {
         super(container);
         this.eventBus = eventBus;
         this.descriptionElement = container.querySelector('.order-success__description');
-        this.closeButton = container.querySelector('.order-success__close');        
+        this.closeButton = container.querySelector('.order-success__close');
+        
         this.closeButton?.addEventListener('click', () => {
             this.eventBus.emit('success:close');
         });

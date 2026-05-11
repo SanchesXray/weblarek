@@ -16,19 +16,36 @@ export abstract class BaseCard extends Component<ICardData> {
     protected priceElement: HTMLElement | null;
     protected imageElement: HTMLImageElement | null;
     protected categoryElement: HTMLElement | null;
-    protected eventBus?: EventEmitter;
+    protected eventBus: EventEmitter;
+    protected onClickCallback?: (id: string) => void;
 
-    constructor(container: HTMLElement, eventBus?: EventEmitter) {
+    constructor(container: HTMLElement, eventBus: EventEmitter, onClick?: (id: string) => void) {
         super(container);
         this.eventBus = eventBus;
+        this.onClickCallback = onClick;
+
         this.titleElement = container.querySelector('.card__title');
         this.priceElement = container.querySelector('.card__price');
         this.imageElement = container.querySelector('.card__image');
         this.categoryElement = container.querySelector('.card__category');
+
+        // Клик по карточке передаёт id через колбэк (без хранения в разметке)
+        this.container.addEventListener('click', () => {
+            if (this.onClickCallback) {
+                this.onClickCallback(this.id);
+            }
+        });
+    }
+
+    // Данные хранятся в полях класса, а не в разметке
+    private _id: string = '';
+
+    get id(): string {
+        return this._id;
     }
 
     set id(value: string) {
-        this.container.setAttribute('data-id', value);
+        this._id = value;
     }
 
     set title(value: string) {
@@ -59,16 +76,5 @@ export abstract class BaseCard extends Component<ICardData> {
         if (this.eventBus) {
             this.eventBus.emit(event, payload);
         }
-    }
-
-    render(data?: Partial<ICardData>): HTMLElement {
-        if (data) {
-            if (data.id !== undefined) this.id = data.id;
-            if (data.title !== undefined) this.title = data.title;
-            if (data.price !== undefined) this.price = data.price;
-            if (data.image !== undefined) this.image = data.image;
-            if (data.category !== undefined) this.category = data.category;
-        }
-        return this.container;
     }
 }

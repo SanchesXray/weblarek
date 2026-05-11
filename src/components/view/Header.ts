@@ -10,7 +10,8 @@ export class Header extends Component<any> {
         super(container);
         this.eventBus = eventBus;
         this.basketButton = container.querySelector('.header__basket');
-        this.counterElement = container.querySelector('.header__basket-counter');        
+        this.counterElement = container.querySelector('.header__basket-counter');
+        
         this.basketButton?.addEventListener('click', () => {
             this.eventBus.emit('basket:open');
         });

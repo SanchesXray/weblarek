@@ -11,7 +11,8 @@ export class Modal extends Component<any> {
         super(container);
         this.eventBus = eventBus;
         this.contentContainer = container.querySelector('.modal__content');
-        this.closeButton = container.querySelector('.modal__close');        
+        this.closeButton = container.querySelector('.modal__close');
+        
         this.closeButton?.addEventListener('click', () => this.close());
         container.addEventListener('click', (e) => {
             if (e.target === container) this.close();
