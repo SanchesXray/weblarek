@@ -4,8 +4,8 @@ import { EventEmitter } from '../base/Events';
 export class PreviewCard extends ActionCard {
     protected descriptionElement: HTMLElement | null;
 
-    constructor(container: HTMLElement, eventBus: EventEmitter, onButtonClick: (id: string) => void) {
-        super(container, eventBus, onButtonClick);
+    constructor(container: HTMLElement, eventBus: EventEmitter, onButtonClick: () => void) {
+        super(container, eventBus, undefined, onButtonClick);
         this.descriptionElement = container.querySelector('.card__text');
     }
 

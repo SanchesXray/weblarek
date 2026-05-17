@@ -11,7 +11,6 @@ export class OrderForm extends BaseForm {
         this.paymentButtons = this.formElement.querySelectorAll('.order__buttons button');
         this.addressInput = this.formElement.querySelector('input[name="address"]');
 
-        // Только эмит события, UI меняется через setPaymentMethod из презентера
         this.paymentButtons.forEach(button => {
             button.addEventListener('click', () => {
                 this.eventBus.emit('order:payment-change', { payment: button.name });
@@ -19,7 +18,6 @@ export class OrderForm extends BaseForm {
         });
     }
 
-    // UI обновляется только через этот метод (вызывается из презентера)
     setPaymentMethod(payment: string): void {
         this.paymentButtons.forEach(btn => {
             if (btn.name === payment) {
@@ -32,9 +30,5 @@ export class OrderForm extends BaseForm {
 
     setAddress(value: string): void {
         if (this.addressInput) this.addressInput.value = value;
-    }
-
-    getAddress(): string {
-        return this.addressInput?.value || '';
     }
 }

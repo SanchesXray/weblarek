@@ -1,25 +1,46 @@
 import { BaseCard } from './BaseCard';
 import { EventEmitter } from '../base/Events';
+import { categoryMap } from '../../utils/constants';
 
-/**
- * Базовый класс для карточек с кнопкой действия.
- * Отделяет клик по карточке от клика по кнопке.
- */
 export abstract class ActionCard extends BaseCard {
+    protected imageElement: HTMLImageElement | null;
+    protected categoryElement: HTMLElement | null;
     protected buttonElement: HTMLButtonElement | null;
-    protected onButtonClickCallback?: (id: string) => void;
+    protected onButtonClickCallback?: () => void;
 
-    constructor(container: HTMLElement, eventBus: EventEmitter, onButtonClick?: (id: string) => void, onClick?: (id: string) => void) {
+    constructor(
+        container: HTMLElement,
+        eventBus: EventEmitter,
+        onClick?: () => void,
+        onButtonClick?: () => void
+    ) {
         super(container, eventBus, onClick);
         this.onButtonClickCallback = onButtonClick;
+        
+        this.imageElement = container.querySelector('.card__image');
+        this.categoryElement = container.querySelector('.card__category');
         this.buttonElement = container.querySelector('.card__button');
-
+        
         this.buttonElement?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (this.onButtonClickCallback) {
-                this.onButtonClickCallback(this.id);
+                this.onButtonClickCallback();
             }
         });
+    }
+
+    set image(value: string) {
+        if (this.imageElement) {
+            this.setImage(this.imageElement, value, this.title);
+        }
+    }
+
+    set category(value: string) {
+        if (this.categoryElement) {
+            this.categoryElement.textContent = value;
+            const modifier = categoryMap[value as keyof typeof categoryMap] || 'card__category_other';
+            this.categoryElement.className = `card__category ${modifier}`;
+        }
     }
 
     set buttonText(value: string) {
